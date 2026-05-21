@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
 const register = async (req, res) => {
-  const { fullname, email, password, role = 'customer', phone, address } = req.body;
-  if (!fullname || !email || !password)
+  const { name, email, password, role = 'customer', phone, address } = req.body;
+  if (!name || !email || !password)
     return res.status(400).json({ message: 'name, email and password are required' });
 
   const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
@@ -12,14 +12,14 @@ const register = async (req, res) => {
 
   const hashed = await bcrypt.hash(password, 10);
   const [result] = await db.query(
-    'INSERT INTO users (fullname, email, password, role) VALUES (?,?,?,?)',
-    [fullname, email, hashed, role]
+    'INSERT INTO users (name, email, password, role, phone, address) VALUES (?,?,?,?,?,?)',
+    [name, email, hashed, role, phone, address]
   );
 
   if (role === 'customer') {
     await db.query(
-      'INSERT INTO customers (id, fullname, email) VALUES (?,?,?)',
-      [result.insertId, fullname, email]
+      'INSERT INTO customers (user_id, name, email, phone, address) VALUES (?,?,?,?,?)',
+      [result.insertId, name, email, phone, address]
     );
   }
 
@@ -44,7 +44,7 @@ const login = async (req, res) => {
     { expiresIn: '24h' }
   );
 
-  res.json({ token, user: { id: user.id, fullname: user.fullname, email: user.email, role: user.role } });
+  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 };
 
 module.exports = { register, login };
